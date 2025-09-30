@@ -1,5 +1,8 @@
 import os
 from pathlib import Path
+import logging
+
+logging.basicConfig(level=logging.INFO,format='[%(asctime)s]: %(message)s:')
 
 project_name="Easy_Visa"
 
@@ -18,7 +21,9 @@ list_of_files=[
     f"{project_name}/entity/config_entity.py",
     f"{project_name}/entity/artifact_entity.py",
     f"{project_name}/exception/__init__.py",
-    f"{project_name}/logger/__init__.py",
+    f"{project_name}/exception/exception.py",
+    f"{project_name}/logging/__init__.py",
+    f"{project_name}/logging/logger.py",
     f"{project_name}/pipeline/__init__.py",
     f"{project_name}/pipeline/training_pipeline.py",
     f"{project_name}/pipeline/prediction_pipeline.py",
@@ -35,15 +40,28 @@ list_of_files=[
 ]
 
 for filepath in list_of_files:
-    filepath = Path(filepath)
+    filepath=Path(filepath)
     filedir,filename = os.path.split(filepath)
-    if filedir != "":
+
+    # --- Directory Creation Logic ---
+    # Determine if directory was created or already existed
+    is_dir_newly_created = False
+    if filedir and not os.path.exists(filedir):
         os.makedirs(filedir,exist_ok=True)
-    if (not os.path.exists(filepath)) or (os.path.getsize(filepath) == 0) :
+        logging.info(f"Creating directory: {filedir}")
+        is_dir_newly_created = True
+
+    # Log 'already exists' for the directory only if it wasn't newly created
+    if filedir and not is_dir_newly_created and os.path.exists(filedir):
+        logging.info(f"Directory already exists: {filedir}")
+
+    # --- File Creation Logic ---
+    if (not os.path.exists(filepath)) or (os.path.getsize(filepath) ==0):
         with open(filepath,"w") as f:
             pass
-    else:
-        print(f"file is already present at: {filepath}")
+        logging.info(f"Creating empty file: {filepath}")
+    else: # This else block is only reached if the file ALREADY existed and was not empty
+        logging.info(f"File already exists: {filepath}")
 
     
 
