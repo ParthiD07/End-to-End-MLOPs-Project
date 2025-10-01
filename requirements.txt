@@ -23,5 +23,5 @@ uvicorn
 jinja2
 python-multipart
 certifi
--e .
+#-e .
 
