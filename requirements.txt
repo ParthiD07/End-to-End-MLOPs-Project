@@ -23,5 +23,7 @@ uvicorn
 jinja2
 python-multipart
 certifi
+python-box
+ensure
 #-e .
 
