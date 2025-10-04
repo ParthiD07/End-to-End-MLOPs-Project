@@ -1,9 +1,4 @@
-from Easy_Visa.logging.logger import logger
-from Easy_Visa.exception.exception import CustomException
+from Easy_Visa.pipeline.training_pipeline import TrainPipeline
 
-logger.info("welcome to custom logging")
-
-try:
-    a=1/0
-except Exception as e:
-    raise CustomException(e)
+obj=TrainPipeline()
+obj.run_pipeline()
