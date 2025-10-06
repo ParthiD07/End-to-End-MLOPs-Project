@@ -1,6 +1,7 @@
 import logging # Python’s built-in logging library, used to record messages (info, warnings, errors) to files or console. It’s more flexible than print()
 import os # Provides functions for interacting with the operating system (like creating folders, joining paths).
 import sys
+from datetime import datetime 
 
 # --- Constants for Configuration ---
 LOGGING_STR = "[%(asctime)s: %(levelname)s: %(module)s: %(funcName)s: %(lineno)d: %(message)s]"
@@ -11,8 +12,9 @@ log_dir="logs"
 # Create directory if it doesn’t exist
 os.makedirs(log_dir,exist_ok=True)
 
-# Final log file path
-LOG_FILE_PATH=os.path.join(log_dir,"running_logs.log")
+# Create a timestamped log file for each run
+timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+LOG_FILE_PATH=os.path.join(log_dir,f"running_logs_{timestamp}.log")
 
 logging.basicConfig(
     format=LOGGING_STR,
@@ -27,3 +29,4 @@ logging.basicConfig(
 )
 
 logger= logging.getLogger(__name__)
+logger.info(f"Logging started. Logs are saved to {LOG_FILE_PATH}")

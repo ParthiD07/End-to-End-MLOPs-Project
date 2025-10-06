@@ -1,19 +1,18 @@
 import os
 import yaml
 import json
-from Easy_Visa.logging.logger import logger
 from ensure import ensure_annotations
 from box import ConfigBox
 from pathlib import Path
 from box.exceptions import BoxValueError
-from typing import Any
+from typing import Any,Union
 import numpy as np
 import dill
 from pandas import DataFrame
+from Easy_Visa.logging.logger import logger
 from Easy_Visa.exception.exception import CustomException
 
-@ensure_annotations
-def read_yaml(path_to_yaml: Path)-> ConfigBox:
+def read_yaml(path_to_yaml: Union[str, Path])-> dict:
     """
     Reads a YAML file and returns its contents as a dictionary-like object.
 
@@ -31,13 +30,12 @@ def read_yaml(path_to_yaml: Path)-> ConfigBox:
         with open(path_to_yaml,"r") as yaml_file:
             content = yaml.safe_load(yaml_file)
             logger.info(f"YAML file {path_to_yaml} loaded successfully")
-            return ConfigBox(content)
-    except BoxValueError:
-        raise ValueError("YAML file is empty")
+            return content
+  
     except Exception as e:
         raise CustomException(e)    
 
-@ensure_annotations
+
 def save_yaml(path_to_yaml: Path,data: dict) -> None:
     """
     Saves a dictionary to a YAML file.
