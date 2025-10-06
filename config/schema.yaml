@@ -49,8 +49,4 @@ oh_features:
   - unit_of_wage
   - full_time_position
   
-transform_columns:
-  - no_of_employees
-  - company_age
-
 

@@ -36,7 +36,7 @@ def read_yaml(path_to_yaml: Union[str, Path])-> dict:
         raise CustomException(e)    
 
 
-def save_yaml(path_to_yaml: Path,data: dict) -> None:
+def save_yaml(path_to_yaml: Union[str, Path],data: dict) -> None:
     """
     Saves a dictionary to a YAML file.
 
@@ -57,8 +57,7 @@ def save_yaml(path_to_yaml: Path,data: dict) -> None:
     except Exception as e:
         raise CustomException(e)
 
-@ensure_annotations
-def save_model(model:Any,file_path: Path) -> None:
+def save_object(file_path: Union[str, Path],model:Any) -> None:
     """
     Save Python object (e.g., ML model) to a file using dill.
 
@@ -67,6 +66,7 @@ def save_model(model:Any,file_path: Path) -> None:
         path (Path): File path where the object will be stored.
     """
     try:
+        file_path = Path(file_path) 
         file_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
         with open(file_path,"wb") as f:
             dill.dump(model,f)
@@ -76,8 +76,7 @@ def save_model(model:Any,file_path: Path) -> None:
     except Exception as e:
         raise CustomException(e)
     
-@ensure_annotations
-def load_model(file_path: Path) -> Any:
+def load_object(file_path: Union[str, Path]) -> Any:
     """
     Load Python object (e.g., ML model) from a dill file.
 
@@ -139,6 +138,9 @@ def load_numpy_array(file_path: str) -> np.ndarray:
     except Exception as e:
         raise CustomException(e)
     
+
+
+
 def drop_columns(df: DataFrame, cols: list) -> DataFrame:
     """
     Drop specified columns from a pandas DataFrame.

@@ -8,8 +8,8 @@ from pandas import DataFrame
 
 from Easy_Visa.exception.exception import CustomException
 from Easy_Visa.logging.logger import logger
-from Easy_Visa.entity.artifact_entity import DataIngestionArtifact,DataValidationArtifact
 from Easy_Visa.entity.config_entity import DataValidationConfig
+from Easy_Visa.entity.artifact_entity import DataIngestionArtifact,DataValidationArtifact
 from Easy_Visa.utils.main_utils import read_yaml,save_yaml
 from Easy_Visa.constants import SCHEMA_FILE_PATH
 
