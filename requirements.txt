@@ -25,6 +25,7 @@ python-multipart
 certifi
 python-box
 ensure
+mlflow
 python-dotenv
 #-e .
 

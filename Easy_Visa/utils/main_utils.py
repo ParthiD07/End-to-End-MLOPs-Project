@@ -11,6 +11,8 @@ import dill
 from pandas import DataFrame
 from Easy_Visa.logging.logger import logger
 from Easy_Visa.exception.exception import CustomException
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.metrics import f1_score
 
 def read_yaml(path_to_yaml: Union[str, Path])-> dict:
     """
@@ -66,13 +68,12 @@ def save_object(file_path: Union[str, Path],model:Any) -> None:
         path (Path): File path where the object will be stored.
     """
     try:
-        file_path = Path(file_path) 
-        file_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
+        os.makedirs(os.path.dirname(file_path),exist_ok=True)  # Ensure directory exists
         with open(file_path,"wb") as f:
             dill.dump(model,f)
 
         logger.info(f"Object saved successfully at: {file_path}")
-    
+
     except Exception as e:
         raise CustomException(e)
     
@@ -87,10 +88,12 @@ def load_object(file_path: Union[str, Path]) -> Any:
         Any: Loaded Python object.
     """
     try:
+        if not os.path.exists(file_path):
+            raise Exception(f"The file: {file_path} does not exist")
         with open (file_path, "rb") as f:
-            obj = dill.load(f)
+            return dill.load(f)
         logger.info(f"Object loaded successfully from: {file_path}")
-        return obj
+
     except Exception as e:
         raise CustomException(e)
     
@@ -137,31 +140,59 @@ def load_numpy_array(file_path: str) -> np.ndarray:
             return np.load(file_obj)
     except Exception as e:
         raise CustomException(e)
-    
 
-
-
-def drop_columns(df: DataFrame, cols: list) -> DataFrame:
-    """
-    Drop specified columns from a pandas DataFrame.
-
-    Args:
-        df (DataFrame): Input pandas DataFrame.
-        cols (list): List of column names to drop.
-
-    Returns:
-        DataFrame: DataFrame after dropping the specified columns.
-    """
-    try:
-        # Drop given columns
-        updated_df = df.drop(columns=cols, axis=1)
-
-        logger.info(f"Dropped columns: {cols}")
-
-        return updated_df
 
     except KeyError as e:
         logger.error(f"One or more columns not found in DataFrame: {cols}")
         raise CustomException(e)
+    except Exception as e:
+        raise CustomException(e)
+
+def evaluate_models(x_train,y_train,x_test,y_test,models,params):
+    try:
+        report={}
+
+        for name, model in models.items():
+            logger.info(f"Tuning and evaluating model: {name}")
+
+            # Get parameter grid for the model
+            param_grid = params.get(name, {})
+
+            # Perform hyperparameter tuning
+            search = RandomizedSearchCV(
+                estimator=model,
+                param_distributions=param_grid,
+                n_iter=5,
+                cv=3,
+                scoring='f1',
+                n_jobs=-1,
+                random_state=42,
+                verbose=0
+            )
+            search.fit(x_train,y_train)
+
+            model = search.best_estimator_
+            
+            # predictions
+            y_train_pred=model.predict(x_train)
+            y_test_pred=model.predict(x_test)
+
+            # F1 score
+            train_f1= f1_score(y_train,y_train_pred)
+            test_f1= f1_score(y_test,y_test_pred)
+
+            # Save results in report
+            report[name] = {
+                "train_f1": train_f1,
+                "test_f1": test_f1,
+                "best_params": search.best_params_
+            }
+
+            logger.info(
+                f"{name}: Train F1 = {train_f1:.3f}, Test F1 = {test_f1:.3f} | Best Params: {search.best_params_}"
+            )
+
+        return report
+
     except Exception as e:
         raise CustomException(e)
