@@ -1,0 +1,23 @@
+stages:
+  train_pipeline:
+    # The command runs the entire pipeline from start to finish.
+    # The pipeline internally handles data_ingestion, validation, transformation, and training 
+    # and places everything in 'artifacts/<timestamp>/...'.
+    cmd: python Easy_Visa/pipeline/training_pipeline.py  # Assuming this is your runner script
+    
+    # Dependencies: Only track the critical input files and scripts that define the pipeline logic.
+    deps:
+      - Easy_Visa/pipeline/training_pipeline.py
+      - Easy_Visa/components/data_ingestion.py
+      - Easy_Visa/components/data_validation.py
+      - Easy_Visa/components/data_transformation.py    
+      - Easy_Visa/components/model_trainer.py          
+      - config/schema.yaml                       # Critical configuration file
+      # Add others like schema.yaml, specific utility files, etc.
+      # Explicitly link the input data file as a dependency
+      - EasyVisa.csv 
+      
+    # Outputs: Track the static *root folder* for all artifacts.
+    # DVC will track the contents of this folder, including the new timestamped directory created by the script.
+    outs:
+      - artifacts/
