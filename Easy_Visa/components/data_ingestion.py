@@ -78,3 +78,12 @@ class DataIngestion:
             return data_ingestion_artifact
         except Exception as e:
             raise CustomException(e)
+        
+if __name__=="__main__":
+    try:
+        logger.info("Entered the start_data_ingestion operation")
+        config=DataIngestionConfig()
+        data_ingestion = DataIngestion(data_ingestion_config=config)
+        data_ingestion.initate_data_ingestion()
+    except Exception as e:
+        raise CustomException(e)
