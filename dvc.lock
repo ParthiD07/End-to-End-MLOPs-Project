@@ -1,0 +1,39 @@
+schema: '2.0'
+stages:
+  train_pipeline:
+    cmd: python Easy_Visa/pipeline/training_pipeline.py
+    deps:
+    - path: CSV_Data/EasyVisa.csv
+      hash: md5
+      md5: e678cc108faf42a9023c8e49677d94ef
+      size: 1880839
+    - path: Easy_Visa/components/data_ingestion.py
+      hash: md5
+      md5: c83987a0d039ccda535b2f483c967252
+      size: 3205
+    - path: Easy_Visa/components/data_transformation.py
+      hash: md5
+      md5: 1006e8d812d208ee87d37f5759b27e43
+      size: 6565
+    - path: Easy_Visa/components/data_validation.py
+      hash: md5
+      md5: 85993cc5763bbcdfc204fe466359e1b7
+      size: 8798
+    - path: Easy_Visa/components/model_trainer.py
+      hash: md5
+      md5: 4dc86339f317381a9af256f46aa21033
+      size: 11908
+    - path: Easy_Visa/pipeline/training_pipeline.py
+      hash: md5
+      md5: d29a9245a652160ea120ef5c2139eade
+      size: 4800
+    - path: config/schema.yaml
+      hash: md5
+      md5: 897b9f24cc2349dc1864f695b20272e3
+      size: 1006
+    outs:
+    - path: artifacts/
+      hash: md5
+      md5: 13395ff8c069308fa598604040996f3a.dir
+      size: 17648155
+      nfiles: 11

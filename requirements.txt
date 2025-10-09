@@ -26,6 +26,10 @@ certifi
 python-box
 ensure
 mlflow
+dagshub
+dvc
+dvc_s3
 python-dotenv
+
 #-e .
 

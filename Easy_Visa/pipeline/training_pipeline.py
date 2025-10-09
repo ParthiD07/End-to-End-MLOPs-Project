@@ -8,18 +8,16 @@ from Easy_Visa.components.model_trainer import ModelTrainer
 
 from Easy_Visa.entity.config_entity import (DataIngestionConfig,DataValidationConfig,
                                             DataTransformationConfig,ModelTrainerConfig)
-from Easy_Visa.entity.config_entity import TrainingPipelineConfig
 from Easy_Visa.entity.artifact_entity import (DataIngestionArtifact,DataValidationArtifact,
                                               DataTransformationArtifact,ModelTrainerArtifact)
 
 
-class TrainPipeline:
+class TrainingPipeline:
     def __init__(self):
-        self.training_pipeline_config=TrainingPipelineConfig()
-        self.data_ingestion_config=DataIngestionConfig(training_pipeline_config=self.training_pipeline_config)
-        self.data_validation_config=DataValidationConfig(training_pipeline_config=self.training_pipeline_config)
-        self.data_transformation_config=DataTransformationConfig(training_pipeline_config=self.training_pipeline_config)
-        self.model_trainer_config=ModelTrainerConfig(training_pipeline_config=self.training_pipeline_config)
+        self.data_ingestion_config=DataIngestionConfig()
+        self.data_validation_config=DataValidationConfig()
+        self.data_transformation_config=DataTransformationConfig()
+        self.model_trainer_config=ModelTrainerConfig()
 
     def start_data_ingestion(self)->DataIngestionArtifact:
         logger.info("Entered the start_data_ingestion operation")
@@ -74,9 +72,18 @@ class TrainPipeline:
             data_validation_artifact=self.start_data_validation(data_ingestion_artifact=data_ingestion_artifact)
             data_transformation_artifact=self.start_data_transformation(data_validation_artifact=data_validation_artifact)
             model_trainer_artifact=self.start_model_trainer(data_transformation_artifact=data_transformation_artifact)
-            logger.info("Pipeline finished successfully!")
+            logger.info("Training pipeline completed successfully!")
         except Exception as e:
+            logger.error(f"Pipeline execution failed: {e}")
             raise CustomException(e)
+
+if __name__ == "__main__":
+    try:
+        training_pipeline = TrainingPipeline()
+        training_pipeline.run_pipeline()
+    except Exception as e:
+        logger.error(f"Main execution failed: {e}")
+        sys.exit(1)
         
         
 
