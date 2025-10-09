@@ -21,8 +21,6 @@ class DataIngestion:
     def __init__(self,data_ingestion_config:DataIngestionConfig):
         try:
             self.data_ingestion_config=data_ingestion_config
-            os.makedirs(self.data_ingestion_config.data_ingestion_dir, exist_ok=True)
-            logger.info(f"Created DVC tracking root: {self.data_ingestion_config.data_ingestion_dir}")
         except Exception as e:
             raise CustomException(e)
         
@@ -67,6 +65,10 @@ class DataIngestion:
 
     def initate_data_ingestion(self):
         try:
+            os.makedirs(self.data_ingestion_config.data_ingestion_dir, exist_ok=True)
+            logger.info(f"Created DVC tracking root: {self.data_ingestion_config.data_ingestion_dir}")
+
+            # Now proceed with data logic
             dataframe=self.export_collection_as_dataframe()
             dataframe=self.export_data_into_feature_store(dataframe)
             self.split_data_as_train_test(dataframe)
