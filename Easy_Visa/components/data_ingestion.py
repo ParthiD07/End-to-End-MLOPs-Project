@@ -81,9 +81,11 @@ class DataIngestion:
         
 if __name__=="__main__":
     try:
-        logger.info("Entered the start_data_ingestion operation")
+        logger.info("Starting Data Ingestion component execution")
         config=DataIngestionConfig()
         data_ingestion = DataIngestion(data_ingestion_config=config)
         data_ingestion.initate_data_ingestion()
+        logger.info(f"Data Ingestion component finished successfully.")
     except Exception as e:
+        logger.error(f"Data Ingestion component failed! Error: {e}")
         raise CustomException(e)

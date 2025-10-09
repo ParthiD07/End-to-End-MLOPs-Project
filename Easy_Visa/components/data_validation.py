@@ -121,6 +121,8 @@ class DataValidation:
         try:
             validation_error_msg=""
             logger.info("Starting data validation")
+            os.makedirs(self.data_validation_config.data_validation_dir, exist_ok=True)
+            logger.info(f"Created DVC tracking root: {self.data_validation_config.data_validation_dir}")
 
             train_file_path=self.data_ingestion_artifact.train_file_path
             test_file_path=self.data_ingestion_artifact.test_file_path
@@ -146,7 +148,7 @@ class DataValidation:
             test_valid, test_msg = validate_dataset(test_df, "test")
             validation_error_msg += f"\n{train_msg}\n{test_msg}"
 
-            validation_status = train_valid and test_valid
+            final_status = train_valid and test_valid 
 
             # Create output directories
             os.makedirs(self.data_validation_config.valid_data_dir, exist_ok=True)
@@ -179,7 +181,7 @@ class DataValidation:
             logger.info(drift_msg)
 
             data_validation_artifact = DataValidationArtifact(
-            validation_status=True,  # Always save files
+            validation_status=final_status,
             valid_train_file_path=valid_train_path if train_valid else None,
             valid_test_file_path=valid_test_path if test_valid else None,
             invalid_train_file_path=None if train_valid else invalid_train_path,
@@ -191,6 +193,22 @@ class DataValidation:
         
         except Exception as e:
             raise CustomException(e)
+
+if __name__=="__main__":
+    try:
+        logger.info("Starting Data Validation component execution")
+        config=DataValidationConfig()
+        data_ingestion_artifact=DataIngestionArtifact(
+                                        train_file_path="artifacts/data_ingestion/ingested/train.csv", 
+                                        test_file_path="artifacts/data_ingestion/ingested/test.csv")
+        data_validation= DataValidation(data_ingestion_artifact=data_ingestion_artifact,
+                                        data_validation_config=config)
+        data_validation.initiate_data_validation()
+        logger.info(f"Data Validation component finished successfully.")
+        
+    except Exception as e:
+        logger.error(f"Data Validation component failed! Error: {e}")
+        raise CustomException(e)
         
     
     

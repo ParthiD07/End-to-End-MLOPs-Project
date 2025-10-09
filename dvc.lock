@@ -37,3 +37,42 @@ stages:
       md5: 13395ff8c069308fa598604040996f3a.dir
       size: 17648155
       nfiles: 11
+  data_ingestion:
+    cmd: python Easy_Visa/components/data_ingestion.py
+    deps:
+    - path: CSV_Data/EasyVisa.csv
+      hash: md5
+      md5: e678cc108faf42a9023c8e49677d94ef
+      size: 1880839
+    - path: Easy_Visa/components/data_ingestion.py
+      hash: md5
+      md5: ad8f5b2b7603528a3d0ff0e7bcf2be4b
+      size: 3919
+    outs:
+    - path: artifacts/data_ingestion
+      hash: md5
+      md5: 8d974ae8226f3bbef107d4287f1595bb.dir
+      size: 3762869
+      nfiles: 3
+  data_validation:
+    cmd: python Easy_Visa/components/data_validation.py
+    deps:
+    - path: Easy_Visa/components/data_validation.py
+      hash: md5
+      md5: 792743adc180fe508ba83effe3913b16
+      size: 9620
+    - path: artifacts/data_ingestion
+      hash: md5
+      md5: 8d974ae8226f3bbef107d4287f1595bb.dir
+      size: 3762869
+      nfiles: 3
+    - path: config/schema.yaml
+      hash: md5
+      md5: 897b9f24cc2349dc1864f695b20272e3
+      size: 1006
+    outs:
+    - path: artifacts/data_validation
+      hash: md5
+      md5: b527c6c859b0ded229f1cce7b3e37c25.dir
+      size: 8140024
+      nfiles: 4
