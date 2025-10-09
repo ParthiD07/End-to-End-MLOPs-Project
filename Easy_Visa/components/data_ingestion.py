@@ -21,6 +21,8 @@ class DataIngestion:
     def __init__(self,data_ingestion_config:DataIngestionConfig):
         try:
             self.data_ingestion_config=data_ingestion_config
+            os.makedirs(self.data_ingestion_config.data_ingestion_dir, exist_ok=True)
+            logger.info(f"Created DVC tracking root: {self.data_ingestion_config.data_ingestion_dir}")
         except Exception as e:
             raise CustomException(e)
         
