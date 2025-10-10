@@ -21,6 +21,7 @@ stages:
     deps:
       - Easy_Visa/components/data_transformation.py
       - artifacts/data_validation
+      - config/schema.yaml 
     outs:
       - artifacts/data_transformation
 
@@ -31,3 +32,12 @@ stages:
       - artifacts/data_transformation
     outs:
       - artifacts/model_trainer
+
+  model_evaluation:
+    cmd: python Easy_Visa/components/model_evaluation.py
+    deps:
+      - Easy_Visa/components/model_evaluation.py
+      - artifacts/model_trainer
+      - artifacts/data_ingestion
+    outs:
+      - artifacts/model_evaluation

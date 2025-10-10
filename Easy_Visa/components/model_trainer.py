@@ -1,4 +1,6 @@
 import os,sys
+import json
+from typing import Dict, Any
 from Easy_Visa.exception.exception import CustomException
 from Easy_Visa.logging.logger import logger
 
@@ -14,14 +16,18 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import (GradientBoostingClassifier,RandomForestClassifier,AdaBoostClassifier)
 from xgboost import XGBClassifier
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, confusion_matrix, ConfusionMatrixDisplay
 
 import mlflow
 import mlflow.sklearn
 import dagshub
+from dagshub.common.errors import DagsHubRepoNotFoundError
+import matplotlib.pyplot as plt
+import io # For saving plots to MLflow
 
 
 class ModelTrainer:
+
     def __init__(self,data_transformation_artifact:DataTransformationArtifact,model_trainer_config:ModelTrainerConfig):
         try:
             self.data_transformation_artifact=data_transformation_artifact
@@ -29,11 +35,30 @@ class ModelTrainer:
         except Exception as e:
             raise CustomException(e)
         
+    def get_base_models_and_params(self):
+        """Defines models and hyperparameter grids (Moved from train_model)."""
+        models = {
+            "Random_forest": RandomForestClassifier(random_state=42),
+            "Gradient_boosting": GradientBoostingClassifier(random_state=42),
+            "Logistic_Regression": LogisticRegression(solver='liblinear', random_state=42),
+            "Adaboost": AdaBoostClassifier(random_state=42),
+            "XGBoost": XGBClassifier(eval_metric='logloss', random_state=42)}
+        
+        params = {
+            "Random_forest": {"n_estimators": [25,50,75,100], "max_depth": [5, 10, 15], "min_samples_split": [2, 5, 10]},
+            "Gradient_boosting": {"n_estimators": [25,50,75,100], "learning_rate": [0.01, 0.05, 0.1], "max_depth": [3, 5, 7, 9]},
+            "Logistic_Regression": {"penalty": ['l1', 'l2'], "C": [0.01, 0.1, 1.0]},
+            "Adaboost": {"n_estimators": [25,50,75,100], "learning_rate": [0.01, 0.05, 0.1], "algorithm": ['SAMME', 'SAMME.R']},
+            "XGBoost": {"n_estimators": [25,50,75,100], "learning_rate": [0.01, 0.05, 0.1], "max_depth": [3, 5, 7]}
+        }
+        return models, params
+        
     
-    def tune_and_log_models(self,x_train,y_train,x_test,y_test,models,params):
+    def tune_and_log_models(self,x_train,y_train,x_test,y_test)-> Dict[str, Any]:
         try:
             report={}
 
+            models, params = self.get_base_models_and_params()
             for name, model in models.items():
                 # Start a new run for each model being tuned
                 # This will be a nested run if initiate_model_trainer wraps everything in one run
@@ -59,13 +84,6 @@ class ModelTrainer:
                     
                     search.fit(x_train,y_train)
 
-                    # Log all hyperparameter search results (optional but good practice)
-                    results = search.cv_results_
-                    for i in range(len(results['params'])):
-                        with mlflow.start_run(run_name=f"Trial_{i}", nested=True):
-                            mlflow.log_params(results['params'][i])
-                            mlflow.log_metric("mean_cv_f1", results['mean_test_score'][i])
-
                     # Store and evaluate the best model
                     best_tuned_model = search.best_estimator_
 
@@ -79,6 +97,9 @@ class ModelTrainer:
                     # F1 score
                     train_f1= f1_score(y_train,y_train_pred)
                     test_f1= f1_score(y_test,y_test_pred)
+
+                    # Log F1 scores for model comparison
+                    mlflow.log_metrics({"train_f1": train_f1, "test_f1": test_f1})
 
                     # Save results in report
                     report[name] = {
@@ -97,59 +118,50 @@ class ModelTrainer:
 
         except Exception as e:
             raise CustomException(e)
-
-
-    def train_model(self,x_train,y_train,x_test,y_test):
-        """
-        Trains multiple models and returns their evaluation report.
-        """
-        models={
-            "Random_forest": RandomForestClassifier(),
-            "Gradient_boosting": GradientBoostingClassifier(),
-            "Logistic_Regression": LogisticRegression(),
-            "Adaboost": AdaBoostClassifier(),
-            "XGBoost": XGBClassifier()}
         
-        params = {
-    "Random_forest": {
-        "n_estimators": [25,50,75,100],
-        "max_depth": [5, 10, 15],
-        "min_samples_split": [2, 5, 10],
-        # "min_samples_leaf": [1, 2, 4, 8]
-    },
+    def log_best_model_details(self, best_model, x_train, y_train, x_test, y_test):
 
-    "Gradient_boosting": {
-        "n_estimators": [25,50,75,100],
-        "learning_rate": [0.01, 0.05, 0.1],
-        "max_depth": [3, 5, 7, 9],
-        # "subsample": [0.8, 0.9, 1.0]
-    },
+        """Logs detailed final metrics, CM, and model to the main MLflow run."""
+        try:
+            y_train_pred = best_model.predict(x_train)
+            y_test_pred = best_model.predict(x_test)
 
-    "Logistic_Regression": {
-        "penalty": ['l1', 'l2'],
-        "C": [0.01, 0.1, 1.0],
-        "solver": ['liblinear'],
-        # "max_iter": [25,50,75,100]
-    },
+            train_metric = get_classification_score(y_true=y_train, y_pred=y_train_pred)
+            test_metric = get_classification_score(y_true=y_test, y_pred=y_test_pred)
+            
+            # 1. Log Detailed Classification Metrics
+            mlflow.log_metrics({
+                "final_train_f1": train_metric.f1_score,
+                "final_train_precision": train_metric.precision_score,
+                "final_train_recall": train_metric.recall_score,
+                "final_test_f1": test_metric.f1_score,
+                "final_test_precision": test_metric.precision_score,
+                "final_test_recall": test_metric.recall_score,
+                "f1_score_difference": abs(train_metric.f1_score - test_metric.f1_score)
+            })
 
-    "Adaboost": {
-        "n_estimators": [25,50,75,100],
-        "learning_rate": [0.01, 0.05, 0.1],
-        "algorithm": ['SAMME', 'SAMME.R'],
-        # "estimator": [DecisionTreeClassifier(max_depth=d) for d in [1, 2, 3, 4]]
-    },
+            # 2. Log Confusion Matrix
+            cm = confusion_matrix(y_test, y_test_pred)
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+            fig, ax = plt.subplots(figsize=(6, 6))
+            disp.plot(ax=ax)
+            
+            # Log the plot to MLflow
+            mlflow.log_figure(fig, "confusion_matrix.png")
+            plt.close(fig)
 
-    "XGBoost": {
-        "n_estimators": [25,50,75,100],
-        "learning_rate": [0.01, 0.05, 0.1],
-        "max_depth": [3, 5, 7],
-        # "subsample": [0.7, 0.8, 0.9, 1.0]
-    }}
-        
-        model_report=self.tune_and_log_models(x_train=x_train,y_train=y_train,x_test=x_test,y_test=y_test,
-                                          models=models,params=params)
-        
-        return model_report
+            # 3. Overfitting/Underfitting Check
+            diff = abs(train_metric.f1_score - test_metric.f1_score)
+            mlflow.log_metric("f1_score_difference", diff)
+            if diff > self.model_trainer_config.overfitting_underfitting_threshold:
+                logger.warning(
+                    f"Possible Overfitting/Underfitting. F1 Diff: {diff:.4f} > Threshold: {self.model_trainer_config.overfitting_underfitting_threshold}"
+                )
+
+            return train_metric, test_metric
+
+        except Exception as e:
+            raise CustomException(e)
     
         
     def initiate_model_trainer(self)->ModelTrainerArtifact:
@@ -157,8 +169,11 @@ class ModelTrainer:
             logger.info("Starting Model Trainer and MLflow main run...")
 
             # Initialize Dagshub (use environment variable for secure URI)
+            # Initialize Dagshub (use environment variable for secure URI)
             dagshub_uri = os.getenv("DAGSHUB_URI")
-            mlflow.set_tracking_uri(dagshub_uri)
+
+            if dagshub_uri:
+                mlflow.set_tracking_uri(dagshub_uri)
 
             dagshub.init(
                 repo_owner=os.getenv("DAGSHUB_USER"),
@@ -174,7 +189,6 @@ class ModelTrainer:
                 # --- Data Loading ---
                 train_file_path=self.data_transformation_artifact.transformed_train_file_path
                 test_file_path=self.data_transformation_artifact.transformed_test_file_path
-
             
                 train_arr=load_numpy_array(train_file_path)
                 test_arr=load_numpy_array(test_file_path)
@@ -183,13 +197,12 @@ class ModelTrainer:
                 x_test, y_test = test_arr[:, :-1], test_arr[:, -1]
 
                 # --- Model Training and Hyperparameter Tuning ---
-                report= self.train_model(x_train,y_train,x_test,y_test)
+                report= self.tune_and_log_models(x_train,y_train,x_test,y_test)
 
                 # --- Select Best Model ---
                 best_model_name = max(report, key=lambda k: report[k]["test_f1"])
                 best_model_metrics = report[best_model_name]
                 best_model = best_model_metrics["model"]
-                best_params = best_model_metrics["best_params"]
 
                 logger.info(f"Best model found: {best_model_name} | Train F1: {best_model_metrics['train_f1']:.3f} | Test F1: {best_model_metrics['test_f1']:.3f}")
                 
@@ -204,27 +217,13 @@ class ModelTrainer:
                 # --- Final Model Validation ---
                 if best_model_metrics["test_f1"] < self.model_trainer_config.expected_accuracy:
                     raise CustomException(
-                        f"Best model {best_model_name} failed to meet the expected F1 threshold of {self.expected_accuracy}. "
+                        f"Best model {best_model_name} failed to meet the expected F1 threshold of {self.model_trainer_config.expected_accuracy}. "
                         f"Achieved only {best_model_metrics['test_f1']:.3f}"
                     )
-                logger.info(f" Model passed expected accuracy threshold: {best_model_metrics['test_f1']:.3f} >= {self.model_trainer_config.expected_accuracy}")
+                logger.info(f"Model passed expected accuracy threshold: {best_model_metrics['test_f1']:.3f} >= {self.model_trainer_config.expected_accuracy}")
 
-                 # --- Final Evaluation (using comprehensive metrics) ---
-                y_train_pred=best_model.predict(x_train)
-                y_test_pred = best_model.predict(x_test)
-
-                train_metric=get_classification_score(y_true=y_train,y_pred=y_train_pred)
-                test_metric=get_classification_score(y_true=y_test,y_pred=y_test_pred)
-
-                # Log detailed final metrics in the main run
-                mlflow.log_metrics({
-                    "final_train_f1": train_metric.f1_score,
-                    "final_train_precision": train_metric.precision_score,
-                    "final_train_recall": train_metric.recall_score,
-                    "final_test_f1": test_metric.f1_score,
-                    "final_test_precision": test_metric.precision_score,
-                    "final_test_recall": test_metric.recall_score
-                })
+                # --- Final Evaluation and Logging (Best Practice) ---
+                train_metric, test_metric = self.log_best_model_details(best_model, x_train, y_train, x_test, y_test)
 
                 # Load preprocessor and save trained model
                 preprocessor=load_object(self.data_transformation_artifact.transformed_object_file_path)
@@ -233,27 +232,43 @@ class ModelTrainer:
                 os.makedirs(model_dir_path,exist_ok=True)
 
                 # Create the final VisaModel object
-                visa_model=VisaModel(preprocessor=preprocessor,model=best_model)
+                visa_model=VisaModel(preprocessing_object=preprocessor,model=best_model)
                 # Save the model object locally (for the pipeline)
                 save_object(self.model_trainer_config.trained_model_file_path,model=visa_model)
 
-                # Log the VisaModel to MLflow/DagsHub
-                # This automatically stores the model file and logs it to the DVC remote specified in DagsHub
-                mlflow.sklearn.log_model(visa_model, "visa_model")
+                # --- Save Metrics as JSON ---
+                metrics_dir = os.path.join(model_dir_path, "metrics")
+                os.makedirs(metrics_dir, exist_ok=True)
 
-                 # --- Overfitting/Underfitting check ---
-                diff = abs(train_metric.f1_score - test_metric.f1_score)
-                mlflow.log_metric("f1_score_difference", diff)
-                if diff > self.model_trainer_config.overfitting_underfitting_threshold:
-                    logger.warning(
-                        f"Possible Overfitting/Underfitting. F1 Diff: {diff:.4f} > Threshold: {self.model_trainer_config.overfitting_underfitting_threshold}"
-                    )
+                train_metric_path = os.path.join(metrics_dir, "train_metrics.json")
+                test_metric_path = os.path.join(metrics_dir, "test_metrics.json")
+
+                # Convert train/test metric objects to dict and save
+                with open(train_metric_path, "w") as f:
+                    json.dump(train_metric.__dict__, f, indent=4)
+
+                with open(test_metric_path, "w") as f:
+                    json.dump(test_metric.__dict__, f, indent=4)
+
+                mlflow.log_artifact(train_metric_path, artifact_path="metrics")
+                mlflow.log_artifact(test_metric_path, artifact_path="metrics")
+
+                # Set a consistent registered model name
+                registered_model_name = "EasyVisa_Classifier"
+
+                # Log the VisaModel to MLflow/DagsHub and register it (Best Practice)
+                mlflow.sklearn.log_model(
+                    sk_model=visa_model, 
+                    artifact_path="visa_model_artifact", 
+                    registered_model_name=registered_model_name
+                )
+                logger.info(f"Model logged and registered as '{registered_model_name}' on MLflow/DagsHub.")
 
                 # Create and return artifact
                 model_trainer_artifact=ModelTrainerArtifact(
                     trained_model_file_path=self.model_trainer_config.trained_model_file_path,
-                                                        train_metric_arifact=train_metric,
-                                                        test_metric_arifact=test_metric)
+                    train_metric_file_path=train_metric_path,
+                    test_metric_file_path=test_metric_path)
             
                 logger.info(f"Model Trainer completed successfully. Model saved at: {self.model_trainer_config.trained_model_file_path}")
 
@@ -262,3 +277,23 @@ class ModelTrainer:
         except Exception as e:
             raise CustomException(e)
         
+
+if __name__=="__main__":
+    try:
+        logger.info("Starting Model Trainer component execution")
+        config=ModelTrainerConfig()
+        data_transformation_artifact=DataTransformationArtifact(
+            transformed_object_file_path="artifacts/data_transformation/transformed_object/preprocessing.pkl",
+            transformed_train_file_path="artifacts/data_transformation/transformed/train.npy",
+            transformed_test_file_path="artifacts/data_transformation/transformed/test.npy"
+        )
+
+        model_trainer=ModelTrainer(data_transformation_artifact=data_transformation_artifact,
+                                   model_trainer_config=config)
+                                                
+        model_trainer.initiate_model_trainer()
+        logger.info(f"Model Trainer component finished successfully.")
+        
+    except Exception as e:
+        logger.error(f"Model Trainer component failed! Error: {e}")
+        raise CustomException(e)

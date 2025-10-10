@@ -77,7 +77,7 @@ class DataTransformation:
             logger.info("Starting data validation")
 
             os.makedirs(self.data_transformation_config.data_transformation_dir,exist_ok=True)
-            logger.info(f"Created DVC tracking root: {self.self.data_transformation_config.data_transformation_dir}")
+            logger.info(f"Created DVC tracking root: {self.data_transformation_config.data_transformation_dir}")
 
             train_df=DataTransformation.read_data(self.data_validation_artifact.valid_train_file_path)
             test_df=DataTransformation.read_data(self.data_validation_artifact.valid_test_file_path)
@@ -149,8 +149,8 @@ if __name__=="__main__":
         config=DataTransformationConfig()
         data_validation_artifact=DataValidationArtifact(
                                 validation_status=True,
-                                valid_train_file_path="artifacts\data_validation\validated\train.csv",
-                                valid_test_file_path="artifacts\data_validation\validated\test.csv",
+                                valid_train_file_path="artifacts/data_validation/validated/train.csv",
+                                valid_test_file_path="artifacts/data_validation/validated/test.csv",
                                 invalid_train_file_path=None,
                                 invalid_test_file_path=None,
                                 drift_report_file_path="artifacts/data_validation/drift_report/report.yaml")

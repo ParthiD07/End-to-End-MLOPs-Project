@@ -186,7 +186,6 @@ class DataValidation:
             valid_test_file_path=valid_test_path if test_valid else None,
             invalid_train_file_path=None if train_valid else invalid_train_path,
             invalid_test_file_path=None if test_valid else invalid_test_path,
-            message=validation_error_msg.strip(),
             drift_report_file_path=self.data_validation_config.drift_report_file_path,
             )
             return data_validation_artifact

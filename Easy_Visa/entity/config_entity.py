@@ -42,3 +42,20 @@ class ModelTrainerConfig:
         self.overfitting_underfitting_threshold: float=MODEL_TRAINER_OVER_FITTING_UNDER_FITTING_THRESHOLD
 
 
+class ModelEvaluationConfig:
+    def __init__(self):
+        self.changed_threshold_score: float = MODEL_EVALUATION_CHANGED_THRESHOLD_SCORE
+        self.bucket_name: str = MODEL_S3_BUCKET_NAME
+        self.s3_model_key_path: str = MODEL_FILE_NAME
+        self.evaluation_dir: str = os.path.join(ARTIFACTS_DIR, "model_evaluation")  # where evaluation files will be stored
+
+class ModelPusherConfig:
+    def __init__(self):
+        self.bucket_name: str = MODEL_S3_BUCKET_NAME
+        self.local_model_pusher_dir: str = os.path.join(ARTIFACTS_DIR, "model_pusher")
+        os.makedirs(self.local_model_pusher_dir, exist_ok=True)
+
+        # Optional: versioning scheme
+        self.model_file_name: str = MODEL_FILE_NAME
+        self.s3_model_dir: str = "models/us_visa_classifier"
+        self.version_prefix: str = f"v{datetime.now().strftime('%Y%m%d%H%M%S')}"

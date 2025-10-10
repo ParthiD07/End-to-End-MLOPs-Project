@@ -59,8 +59,8 @@ stages:
     deps:
     - path: Easy_Visa/components/data_validation.py
       hash: md5
-      md5: 792743adc180fe508ba83effe3913b16
-      size: 9620
+      md5: 1e56d6353c21d86bcede6f466b0d4f85
+      size: 9765
     - path: artifacts/data_ingestion
       hash: md5
       md5: 8d974ae8226f3bbef107d4287f1595bb.dir
@@ -73,6 +73,69 @@ stages:
     outs:
     - path: artifacts/data_validation
       hash: md5
-      md5: b527c6c859b0ded229f1cce7b3e37c25.dir
-      size: 8140024
+      md5: 52473c2c7f1c11c56a021823ee344a38.dir
+      size: 8140023
+      nfiles: 4
+  data_transformation:
+    cmd: python Easy_Visa/components/data_transformation.py
+    deps:
+    - path: Easy_Visa/components/data_transformation.py
+      hash: md5
+      md5: 72181145212981e0c145ef36fdcb5356
+      size: 8017
+    - path: artifacts/data_validation
+      hash: md5
+      md5: 52473c2c7f1c11c56a021823ee344a38.dir
+      size: 8140023
+      nfiles: 4
+    - path: config/schema.yaml
+      hash: md5
+      md5: 897b9f24cc2349dc1864f695b20272e3
+      size: 1006
+    outs:
+    - path: artifacts/data_transformation
+      hash: md5
+      md5: 99fe4b33509ebd81578f5e248d9a9d8c.dir
+      size: 5303225
+      nfiles: 3
+  model_trainer:
+    cmd: python Easy_Visa/components/model_trainer.py
+    deps:
+    - path: Easy_Visa/components/model_trainer.py
+      hash: md5
+      md5: 2d40cb1fa72c4d39b40de84ad34eedac
+      size: 14374
+    - path: artifacts/data_transformation
+      hash: md5
+      md5: 99fe4b33509ebd81578f5e248d9a9d8c.dir
+      size: 5303225
+      nfiles: 3
+    outs:
+    - path: artifacts/model_trainer
+      hash: md5
+      md5: 4597386ac3844a38f89d233168a63dcd.dir
+      size: 441020
+      nfiles: 3
+  model_evaluation:
+    cmd: python Easy_Visa/components/model_evaluation.py
+    deps:
+    - path: Easy_Visa/components/model_evaluation.py
+      hash: md5
+      md5: dcd9f14e0b396db8cb541f2c3bb139dd
+      size: 10429
+    - path: artifacts/data_ingestion
+      hash: md5
+      md5: 8d974ae8226f3bbef107d4287f1595bb.dir
+      size: 3762869
+      nfiles: 3
+    - path: artifacts/model_trainer
+      hash: md5
+      md5: 4597386ac3844a38f89d233168a63dcd.dir
+      size: 441020
+      nfiles: 3
+    outs:
+    - path: artifacts/model_evaluation
+      hash: md5
+      md5: badc0e2e97f7cea5a35e0901727f9a95.dir
+      size: 107944
       nfiles: 4

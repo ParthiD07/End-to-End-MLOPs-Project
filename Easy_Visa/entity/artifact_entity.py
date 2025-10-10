@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 @dataclass
 class DataIngestionArtifact: 
@@ -31,7 +32,31 @@ class ClassificationMetricArtifact:
 @dataclass
 class ModelTrainerArtifact:
     trained_model_file_path: str
-    train_metric_arifact: ClassificationMetricArtifact
-    test_metric_arifact: ClassificationMetricArtifact
+    train_metric_file_path: str
+    test_metric_file_path: str
+
+@dataclass
+class ModelEvaluationArtifact:
+    is_model_accepted: bool
+    changed_accuracy: float
+    s3_model_path: str
+    trained_model_path: str
+    evaluation_metrics_path: str = None
+    best_model_reference_path: str = None
+    confusion_matrix_path: str = None  
+    failing_cases_path: str = None
+
+@dataclass
+class ModelPusherArtifact:
+    bucket_name: str
+    s3_model_path: str
+    local_model_path: str
+    local_metadata_path: str
+    local_metrics_path: str
+    local_best_model_reference_path: str
+    model_version: str
+    pushed_at: str
+
+
 
 
