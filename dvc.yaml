@@ -41,3 +41,11 @@ stages:
       - artifacts/data_ingestion
     outs:
       - artifacts/model_evaluation
+
+  model_pusher:
+    cmd: python Easy_Visa/components/model_pusher.py
+    deps:
+      - Easy_Visa/components/model_pusher.py
+      - artifacts/model_evaluation
+    outs:
+      - artifacts/model_pusher

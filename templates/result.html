@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>US Visa Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>US Visa Approval Prediction</h2>
+        <form action="/predict" method="post">
+
+            <!-- Dropdowns for categorical features -->
+            <label>Continent:</label>
+            <select name="continent" required>
+                {% for option in dropdown_options.continent %}
+                    <option value="{{ option }}" {% if form_values and form_values.continent == option %}selected{% endif %}>
+                        {{ option }}
+                    </option>
+                {% endfor %}
+            </select><br><br>
+
+            <label>Education of Employee:</label>
+            <select name="education_of_employee" required>
+                {% for option in dropdown_options.education_of_employee %}
+                    <option value="{{ option }}" {% if form_values and form_values.education_of_employee == option %}selected{% endif %}>
+                        {{ option }}
+                    </option>
+                {% endfor %}
+            </select><br><br>
+
+            <label>Has Job Experience:</label>
+            <select name="has_job_experience" required>
+                {% for option in dropdown_options.has_job_experience %}
+                    <option value="{{ option }}" {% if form_values and form_values.has_job_experience == option %}selected{% endif %}>
+                        {{ option }}
+                    </option>
+                {% endfor %}
+            </select><br><br>
+
+            <label>Requires Job Training:</label>
+            <select name="requires_job_training" required>
+                {% for option in dropdown_options.requires_job_training %}
+                    <option value="{{ option }}" {% if form_values and form_values.requires_job_training == option %}selected{% endif %}>
+                        {{ option }}
+                    </option>
+                {% endfor %}
+            </select><br><br>
+
+            <label>Region of Employment:</label>
+            <select name="region_of_employment" required>
+                {% for option in dropdown_options.region_of_employment %}
+                    <option value="{{ option }}" {% if form_values and form_values.region_of_employment == option %}selected{% endif %}>
+                        {{ option }}
+                    </option>
+                {% endfor %}
+            </select><br><br>
+
+            <label>Unit of Wage:</label>
+            <select name="unit_of_wage" required>
+                {% for option in dropdown_options.unit_of_wage %}
+                    <option value="{{ option }}" {% if form_values and form_values.unit_of_wage == option %}selected{% endif %}>
+                        {{ option }}
+                    </option>
+                {% endfor %}
+            </select><br><br>
+
+            <label>Full Time Position:</label>
+            <select name="full_time_position" required>
+                {% for option in dropdown_options.full_time_position %}
+                    <option value="{{ option }}" {% if form_values and form_values.full_time_position == option %}selected{% endif %}>
+                        {{ option }}
+                    </option>
+                {% endfor %}
+            </select><br><br>
+
+            <!-- Numeric inputs -->
+            <label>No. of Employees:</label>
+            <input type="number" name="no_of_employees" value="{{ form_values.no_of_employees if form_values }}" required><br><br>
+
+            <label>Prevailing Wage:</label>
+            <input type="number" step="0.01" name="prevailing_wage" value="{{ form_values.prevailing_wage if form_values }}" required><br><br>
+
+            <label>Year of Establishment:</label>
+            <input type="number" name="yr_of_estab" value="{{ form_values.yr_of_estab if form_values }}" required><br><br>
+
+            <button type="submit">Predict</button>
+        </form>
+
+        {% if result %}
+            <h3>Prediction Result: {{ result }}</h3>
+        {% endif %}
+    </div>
+</body>
+</html>
