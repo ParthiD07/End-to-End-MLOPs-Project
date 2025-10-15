@@ -81,16 +81,6 @@ class ModelPusher:
             
             logger.info("Model Pusher process completed successfully.")
 
-            # --- Ensure artifacts directory exists for DVC ---
-            marker_path = os.path.join(local_dir, "pushed_model_marker.txt")
-            if not os.path.exists(local_dir):
-                os.makedirs(local_dir, exist_ok=True)
-
-            # Create a DVC marker file so DVC always detects the stage output
-            
-            with open(marker_path, "w") as marker:
-                marker.write(f"Model pushed successfully at {pushed_at}\n")
-
             # --- Return artifact ---
             return ModelPusherArtifact(
                 bucket_name=self.model_pusher_config.bucket_name,
@@ -123,9 +113,7 @@ if __name__ == "__main__":
         )
         
         pusher_artifact = model_pusher.initiate_model_pusher()
-        logger.info(f"Model pushed successfully via DVC standalone: {pusher_artifact}")
+        logger.info(f"Model pushed successfully")
 
     except Exception as e:
-        logger.error(f"Standalone Model Pusher execution failed! Error: {e}")
-
-        raise CustomException(e, sys)
+        raise CustomException(e)
