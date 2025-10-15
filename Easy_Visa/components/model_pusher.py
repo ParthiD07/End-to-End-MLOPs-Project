@@ -95,11 +95,10 @@ class ModelPusher:
 if __name__ == "__main__":
         
     try:
-        logger.info("Running Model Pusher as standalone for DVC stage execution...")
+        logger.info("Starting Model Pusher component execution")
     
         # 1. Initialize Configuration
         pusher_config = ModelPusherConfig()
-
 
         model_evaluation_artifact=ModelEvaluationArtifact(
             is_model_accepted=True,
