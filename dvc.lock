@@ -51,7 +51,7 @@ stages:
     outs:
     - path: artifacts/data_ingestion
       hash: md5
-      md5: 8d974ae8226f3bbef107d4287f1595bb.dir
+      md5: d60b36c1e9ee611441e5a940542a8088.dir
       size: 3762869
       nfiles: 3
   data_validation:
@@ -63,7 +63,7 @@ stages:
       size: 9765
     - path: artifacts/data_ingestion
       hash: md5
-      md5: 8d974ae8226f3bbef107d4287f1595bb.dir
+      md5: d60b36c1e9ee611441e5a940542a8088.dir
       size: 3762869
       nfiles: 3
     - path: config/schema.yaml
@@ -73,20 +73,20 @@ stages:
     outs:
     - path: artifacts/data_validation
       hash: md5
-      md5: 52473c2c7f1c11c56a021823ee344a38.dir
-      size: 8140023
+      md5: 50918d1c4e44e3869b8507435af605ed.dir
+      size: 8139952
       nfiles: 4
   data_transformation:
     cmd: python Easy_Visa/components/data_transformation.py
     deps:
     - path: Easy_Visa/components/data_transformation.py
       hash: md5
-      md5: 72181145212981e0c145ef36fdcb5356
-      size: 8017
+      md5: 340e87b6080fd0e178564b75b1cfece6
+      size: 8342
     - path: artifacts/data_validation
       hash: md5
-      md5: 52473c2c7f1c11c56a021823ee344a38.dir
-      size: 8140023
+      md5: 50918d1c4e44e3869b8507435af605ed.dir
+      size: 8139952
       nfiles: 4
     - path: config/schema.yaml
       hash: md5
@@ -95,47 +95,65 @@ stages:
     outs:
     - path: artifacts/data_transformation
       hash: md5
-      md5: 99fe4b33509ebd81578f5e248d9a9d8c.dir
-      size: 5303225
+      md5: 43f8fde3daa3effb961dc4d7a3bde283.dir
+      size: 6149785
       nfiles: 3
   model_trainer:
     cmd: python Easy_Visa/components/model_trainer.py
     deps:
     - path: Easy_Visa/components/model_trainer.py
       hash: md5
-      md5: 2d40cb1fa72c4d39b40de84ad34eedac
-      size: 14374
+      md5: dad9669473485d3a5c91544954042fac
+      size: 14358
     - path: artifacts/data_transformation
       hash: md5
-      md5: 99fe4b33509ebd81578f5e248d9a9d8c.dir
-      size: 5303225
+      md5: 43f8fde3daa3effb961dc4d7a3bde283.dir
+      size: 6149785
       nfiles: 3
     outs:
     - path: artifacts/model_trainer
       hash: md5
-      md5: 4597386ac3844a38f89d233168a63dcd.dir
-      size: 441020
+      md5: c89efe1b22c0a2a95119d20428c06738.dir
+      size: 1578614
       nfiles: 3
   model_evaluation:
     cmd: python Easy_Visa/components/model_evaluation.py
     deps:
     - path: Easy_Visa/components/model_evaluation.py
       hash: md5
-      md5: dcd9f14e0b396db8cb541f2c3bb139dd
-      size: 10429
+      md5: 5691b3be8f4fe706af9ca4f22211d900
+      size: 7866
     - path: artifacts/data_ingestion
       hash: md5
-      md5: 8d974ae8226f3bbef107d4287f1595bb.dir
+      md5: d60b36c1e9ee611441e5a940542a8088.dir
       size: 3762869
       nfiles: 3
     - path: artifacts/model_trainer
       hash: md5
-      md5: 4597386ac3844a38f89d233168a63dcd.dir
-      size: 441020
+      md5: c89efe1b22c0a2a95119d20428c06738.dir
+      size: 1578614
       nfiles: 3
     outs:
     - path: artifacts/model_evaluation
       hash: md5
-      md5: badc0e2e97f7cea5a35e0901727f9a95.dir
-      size: 107944
+      md5: 8cb16e62f8f3153b15efea232183cda9.dir
+      size: 207
+      nfiles: 1
+  model_pusher:
+    cmd: python Easy_Visa/components/model_pusher.py
+    deps:
+    - path: Easy_Visa/components/model_pusher.py
+      hash: md5
+      md5: d63ed47822b80e98b106a6bd37d08b6e
+      size: 5962
+    - path: artifacts/model_evaluation
+      hash: md5
+      md5: 8cb16e62f8f3153b15efea232183cda9.dir
+      size: 207
+      nfiles: 1
+    outs:
+    - path: artifacts/model_pusher
+      hash: md5
+      md5: 19cd9faf3cdd6724448d6a6ac9de0749.dir
+      size: 1578799
       nfiles: 4

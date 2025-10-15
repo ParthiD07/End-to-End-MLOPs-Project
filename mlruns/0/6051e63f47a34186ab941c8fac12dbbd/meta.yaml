@@ -1,0 +1,15 @@
+artifact_uri: file:///E:/Practice%20Projects/MLOPS%20Projects/End-to-End-MLOPs-Project/mlruns/0/6051e63f47a34186ab941c8fac12dbbd/artifacts
+end_time: 1760369781952
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 6051e63f47a34186ab941c8fac12dbbd
+run_name: amusing-dolphin-399
+run_uuid: 6051e63f47a34186ab941c8fac12dbbd
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760369768485
+status: 3
+tags: []
+user_id: Parthi

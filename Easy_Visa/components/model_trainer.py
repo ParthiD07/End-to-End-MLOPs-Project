@@ -256,7 +256,7 @@ class ModelTrainer:
                 # Set a consistent registered model name
                 registered_model_name = "EasyVisa_Classifier"
 
-                # Log the VisaModel to MLflow/DagsHub and register it (Best Practice)
+                # Log the VisaModel to MLflow/DagsHub and register it
                 mlflow.sklearn.log_model(
                     sk_model=visa_model, 
                     artifact_path="visa_model_artifact", 

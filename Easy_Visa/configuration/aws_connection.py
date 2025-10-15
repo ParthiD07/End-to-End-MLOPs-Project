@@ -1,5 +1,6 @@
 import boto3
 import os
+from dotenv import load_dotenv
 
 class S3Client:
 
@@ -11,6 +12,9 @@ class S3Client:
         Gets get aws credentials from env_variable and creates an connection with s3 bucket
         """
         if S3Client.s3_client==None or S3Client.s3_resource==None:
+            
+            # --- STEP 1: LOAD ENVIRONMENT VARIABLES FROM .env FILE ---
+            load_dotenv()
 
             # --- Load Credentials & Validate ---
             access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
@@ -35,6 +39,6 @@ class S3Client:
                                     region_name=region_name
                                 )
         # Assign the class-level connections to instance attributes
-        self.s3_resource = S3Client.s3_resource
-        self.s3_client = S3Client.s3_client
+        self.resource = S3Client.s3_resource
+        self.client = S3Client.s3_client
 

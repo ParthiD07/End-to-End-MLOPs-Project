@@ -4,13 +4,9 @@ import pandas as pd
 from datetime import datetime
 from typing import Optional
 from dataclasses import dataclass
-from sklearn.metrics import f1_score, confusion_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.metrics import f1_score
 
 from Easy_Visa.entity.config_entity import ModelEvaluationConfig
-from Easy_Visa.components.model_pusher import ModelPusher
-from Easy_Visa.entity.config_entity import ModelEvaluationConfig, ModelPusherConfig
 from Easy_Visa.entity.artifact_entity import DataIngestionArtifact,ModelTrainerArtifact,ModelEvaluationArtifact
 
 from Easy_Visa.exception.exception import CustomException
@@ -29,7 +25,6 @@ class EvaluateModelResponse:
     best_model_f1_score: float
     is_model_accepted: bool
     difference: float
-    failing_cases_path: Optional[str] = None
 
 class ModelEvaluation:
 
@@ -90,6 +85,7 @@ class ModelEvaluation:
             
             y = ModelEvaluation.transform_target_column(y)
 
+            # load metrics produced by model_trainer
             with open(self.model_trainer_artifact.train_metric_file_path, "r") as f:
                 train_metrics = json.load(f)
 
@@ -99,38 +95,26 @@ class ModelEvaluation:
             trained_model_f1_score = train_metrics["f1_score"]
             test_model_f1_score = test_metrics["f1_score"]
 
+            # create evaluation dir
+            eval_dir = self.model_eval_config.model_evaluation_dir
+            os.makedirs(eval_dir, exist_ok=True)
+
             best_model_f1_score=None
-            failing_cases_path = None
+
             best_model = self.get_best_model()
             if best_model is not None:
                 y_hat_best_model = best_model.predict(x)
-                best_model_f1_score = f1_score(y, y_hat_best_model)
+                best_model_f1_score = float(f1_score(y, y_hat_best_model))
 
-                 # --- Generate failing cases ---
-                failing_cases = test_df[y != y_hat_best_model]
-                if not failing_cases.empty:
-                    eval_dir = os.path.join("artifacts", "model_evaluation")
-                    os.makedirs(eval_dir, exist_ok=True)
-                    failing_cases_path = os.path.join(eval_dir, "failing_cases.csv")
-                    failing_cases.to_csv(failing_cases_path, index=False)
-
-                    # --- Plot confusion matrix ---
-                    cm = confusion_matrix(y, y_hat_best_model)
-                    plt.figure(figsize=(5, 4))
-                    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
-                    plt.xlabel("Predicted")
-                    plt.ylabel("Actual")
-                    plt.title("Confusion Matrix - Production Model")
-                    cm_path = os.path.join(eval_dir, "confusion_matrix.png")
-                    plt.savefig(cm_path)
-                    plt.close()
             
             tmp_best_model_score = 0 if best_model_f1_score is None else best_model_f1_score
+            is_accepted = trained_model_f1_score > tmp_best_model_score
+            diff = trained_model_f1_score - tmp_best_model_score
             result = EvaluateModelResponse(trained_model_f1_score=trained_model_f1_score,
                                            test_model_f1_score=test_model_f1_score,
                                            best_model_f1_score=best_model_f1_score,
-                                           is_model_accepted=trained_model_f1_score > tmp_best_model_score,
-                                           difference=trained_model_f1_score - tmp_best_model_score
+                                           is_model_accepted=is_accepted,
+                                           difference=diff
                                            )
             logger.info(f"Result: {result}")
             return result
@@ -141,10 +125,10 @@ class ModelEvaluation:
     def initiate_model_evaluation(self) -> ModelEvaluationArtifact:
         try:
             eval_response = self.evaluate_model()
-            eval_dir = os.path.join("artifacts", "model_evaluation")
-            os.makedirs(eval_dir, exist_ok=True)
 
             # --- Save evaluation metrics ---
+            eval_dir = self.model_eval_config.model_evaluation_dir
+            os.makedirs(eval_dir, exist_ok=True)
             metrics_path = os.path.join(eval_dir, "evaluation_metrics.json")
             with open(metrics_path, "w") as f:
                 json.dump({
@@ -152,31 +136,15 @@ class ModelEvaluation:
                     "test_model_f1_score": float(eval_response.test_model_f1_score),
                     "best_model_f1_score": float(eval_response.best_model_f1_score) if eval_response.best_model_f1_score is not None else None,
                     "is_model_accepted": bool(eval_response.is_model_accepted),
-                    "difference": float(eval_response.difference),
-                    "failing_cases_path": eval_response.failing_cases_path
+                    "difference": float(eval_response.difference)
                 }, f, indent=4)
-
-            # --- Save best model reference ---
-            best_model_ref_path = os.path.join(eval_dir, "best_model_reference.json")
-            with open(best_model_ref_path, "w") as f:
-                json.dump({"s3_model_path": self.model_eval_config.s3_model_key_path}, f, indent=4)
-
-            # --- Add confusion matrix path if generated ---
-            confusion_matrix_path = None
-            if os.path.exists(os.path.join(eval_dir, "confusion_matrix.png")):
-                confusion_matrix_path = os.path.join(eval_dir, "confusion_matrix.png")
 
             model_evaluation_artifact = ModelEvaluationArtifact(
                 is_model_accepted=eval_response.is_model_accepted,
                 s3_model_path=self.model_eval_config.s3_model_key_path,
                 trained_model_path=self.model_trainer_artifact.trained_model_file_path,
-                changed_accuracy=eval_response.difference,
-                failing_cases_path=eval_response.failing_cases_path,
-                evaluation_metrics_path=metrics_path,          
-                best_model_reference_path=best_model_ref_path,
-                confusion_matrix_path=confusion_matrix_path
+                evaluation_metrics_path=metrics_path
             )
-
             logger.info(f"Model evaluation artifact: {model_evaluation_artifact}")
             return model_evaluation_artifact
 
@@ -187,7 +155,6 @@ if __name__=="__main__":
     try:
         logger.info("Starting Model Evaluation component execution")
         eval_config=ModelEvaluationConfig()
-        pusher_config = ModelPusherConfig()
         data_ingestion_artifact=DataIngestionArtifact(train_file_path="artifacts/data_ingestion/ingested/train.csv",
                                                       test_file_path="artifacts/data_ingestion/ingested/test.csv")
 
@@ -201,18 +168,6 @@ if __name__=="__main__":
 
         eval_artifact = model_evaluator.initiate_model_evaluation()
         logger.info("Model Evaluation finished successfully")
-        # --- Push Model to S3 if accepted ---
-        if eval_artifact.is_model_accepted:
-            logger.info("Model accepted. Starting Model Pusher...")
-            model_pusher = ModelPusher(
-                model_evaluation_artifact=eval_artifact,
-                model_pusher_config=pusher_config
-            )
-            
-            pusher_artifact = model_pusher.initiate_model_pusher()
-            logger.info(f"Model pushed successfully: {pusher_artifact}")
-        else:
-            logger.warning("Model not accepted. Skipping Model Pusher stage.")
             
     except Exception as e:
         logger.error(f"Pipeline failed! Error: {e}")

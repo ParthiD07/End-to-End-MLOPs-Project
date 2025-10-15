@@ -18,10 +18,11 @@ class USvisaEstimator:
             bucket_name (str): Name of the S3 bucket.
             model_path (str): S3 key/path to the model file (e.g., 'models/easyvisa_model.pkl').
         """
-        self.bucket_name = bucket_name
+        
         self.s3 = S3Operations()
         self.model_path = model_path
-        self.loaded_model:VisaModel | None = None
+        self.bucket_name = bucket_name
+        self.loaded_model:VisaModel = None
 
 
     def is_model_present(self):

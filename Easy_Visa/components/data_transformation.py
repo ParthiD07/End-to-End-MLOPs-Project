@@ -2,6 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
+
+from imblearn.combine import SMOTETomek
 from sklearn.pipeline import make_pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder
@@ -122,8 +124,14 @@ class DataTransformation:
             input_features_train_arr = preprocessor.fit_transform(input_features_train_df)
             input_features_test_arr = preprocessor.transform(input_features_test_df)
 
+            smt=SMOTETomek(random_state=42)
+
+            input_features_train_final, target_features_train_final = smt.fit_resample(
+                    input_features_train_arr,target_feature_train_df)
+            logger.info("Applied SMOTETomek on training dataset")
+
             # Combine transformed features with target column
-            train_arr = np.c_[input_features_train_arr, np.array(target_feature_train_df)]
+            train_arr = np.c_[input_features_train_final, np.array(target_features_train_final)]
             test_arr = np.c_[input_features_test_arr, np.array(target_feature_test_df)]
 
             # Save artifacts

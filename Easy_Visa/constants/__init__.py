@@ -60,11 +60,7 @@ MODEL_TRAINER_OVER_FITTING_UNDER_FITTING_THRESHOLD: float=0.05
 """
 Model evaluation related to constant
 """
-
+MODEL_EVALUATION_DIR_NAME: str = "model_evaluation" 
 MODEL_EVALUATION_CHANGED_THRESHOLD_SCORE: float = 0.02
-MODEL_S3_BUCKET_NAME: str = "us-visa-model-795438190924"
-MODEL_EVALUATION_DIR_NAME: str = "model_evaluation"  
-EVALUATION_METRICS_FILE_NAME: str = "evaluation_metrics.json"  
-BEST_MODEL_REFERENCE_FILE_NAME: str = "best_model_reference.json"  
-CONFUSION_MATRIX_FILE_NAME: str = "confusion_matrix.png"  
-FAILING_CASES_FILE_NAME: str = "failing_cases.csv"
+MODEL_S3_BUCKET_NAME: str = "us-visa-model-8321-9489-5652"
+EVALUATION_METRICS_FILE_NAME: str = "evaluation_metrics.json" 

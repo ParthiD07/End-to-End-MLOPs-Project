@@ -20,6 +20,7 @@ class ModelPusher:
         self.s3 = S3Operations()
         self.model_evaluation_artifact = model_evaluation_artifact
         self.model_pusher_config = model_pusher_config
+        # Define where the model will live in S3
         self.usvisa_estimator = USvisaEstimator(bucket_name=model_pusher_config.bucket_name,
                                 model_path=os.path.join(model_pusher_config.s3_model_dir,
                                     model_pusher_config.version_prefix,
@@ -38,7 +39,7 @@ class ModelPusher:
             logger.info("Starting Model Pusher process...")
 
             # --- Prepare local folder ---
-            local_dir = self.model_pusher_config.local_model_pusher_dir
+            local_dir = self.model_pusher_config.model_pusher_dir
             os.makedirs(local_dir, exist_ok=True)
 
             # --- Save local copies ---
@@ -47,9 +48,6 @@ class ModelPusher:
 
             local_metrics_path = os.path.join(local_dir, "evaluation_metrics.json")
             shutil.copy(self.model_evaluation_artifact.evaluation_metrics_path, local_metrics_path)
-
-            local_best_model_reference_path = os.path.join(local_dir, "best_model_reference.json")
-            shutil.copy(self.model_evaluation_artifact.best_model_reference_path, local_best_model_reference_path)
 
             metadata_path = os.path.join(local_dir, "metadata.json")
             model_version = self.model_pusher_config.version_prefix
@@ -62,31 +60,72 @@ class ModelPusher:
             with open(metadata_path, "w") as f:
                 json.dump(metadata, f, indent=4)
 
-            # --- Upload to S3 ---
-            self.usvisa_estimator.save_model(from_file=local_model_path)
-            self.s3.upload_file(local_metrics_path,
-                                bucket_name=self.model_pusher_config.bucket_name,
-                                key=os.path.join(self.model_pusher_config.s3_model_dir, model_version, "evaluation_metrics.json"))
-            self.s3.upload_file(local_best_model_reference_path,
-                                bucket_name=self.model_pusher_config.bucket_name,
-                                key=os.path.join(self.model_pusher_config.s3_model_dir, model_version, "best_model_reference.json"))
-            self.s3.upload_file(metadata_path,
-                                bucket_name=self.model_pusher_config.bucket_name,
-                                key=os.path.join(self.model_pusher_config.s3_model_dir, model_version, "metadata.json"))
+            # --- Load evaluation metrics to check acceptance status ---
+            with open(local_metrics_path, "r") as f:
+                evaluation_data = json.load(f)
 
+            # --- Upload to S3 ---
+            logger.info(f"Uploading model and metadata to S3 bucket: {self.model_pusher_config.bucket_name}")
+            # Upload the model file
+            self.usvisa_estimator.save_model(from_file=local_model_path, remove_local=False)
+            # Upload evaluation metrics
+            self.s3.upload_file(local_metrics_path,
+                    to_s3_key=os.path.join(self.model_pusher_config.s3_model_dir, model_version, "evaluation_metrics.json"),
+                    bucket_name=self.model_pusher_config.bucket_name,
+                    remove_local=False)
+            # Upload metadata
+            self.s3.upload_file(metadata_path,
+                    to_s3_key=os.path.join(self.model_pusher_config.s3_model_dir, model_version, "metadata.json"),
+                    bucket_name=self.model_pusher_config.bucket_name,
+                    remove_local=False)
+            
             logger.info("Model Pusher process completed successfully.")
+
+            # --- Ensure artifacts directory exists for DVC ---
+            marker_path = os.path.join(local_dir, "pushed_model_marker.txt")
+            if not os.path.exists(local_dir):
+                os.makedirs(local_dir, exist_ok=True)
+
+            # Create a DVC marker file so DVC always detects the stage output
+            
+            with open(marker_path, "w") as marker:
+                marker.write(f"Model pushed successfully at {pushed_at}\n")
 
             # --- Return artifact ---
             return ModelPusherArtifact(
                 bucket_name=self.model_pusher_config.bucket_name,
                 s3_model_path=self.usvisa_estimator.model_path,
-                local_model_path=local_model_path,
-                local_metrics_path=local_metrics_path,
-                local_best_model_reference_path=local_best_model_reference_path,
-                local_metadata_path=metadata_path,
                 model_version=model_version,
                 pushed_at=pushed_at
             )
 
         except Exception as e:
             raise CustomException(e)
+        
+if __name__ == "__main__":
+        
+    try:
+        logger.info("Running Model Pusher as standalone for DVC stage execution...")
+    
+        # 1. Initialize Configuration
+        pusher_config = ModelPusherConfig()
+
+
+        model_evaluation_artifact=ModelEvaluationArtifact(
+            is_model_accepted=True,
+            s3_model_path="artifacts/model_trainer/trained_model/model.pkl",
+            trained_model_path="artifacts/model_trainer/trained_model/model.pkl",
+            evaluation_metrics_path="artifacts/model_evaluation/evaluation_metrics.json")
+
+        model_pusher = ModelPusher(
+            model_evaluation_artifact=model_evaluation_artifact,
+            model_pusher_config=pusher_config
+        )
+        
+        pusher_artifact = model_pusher.initiate_model_pusher()
+        logger.info(f"Model pushed successfully via DVC standalone: {pusher_artifact}")
+
+    except Exception as e:
+        logger.error(f"Standalone Model Pusher execution failed! Error: {e}")
+
+        raise CustomException(e, sys)

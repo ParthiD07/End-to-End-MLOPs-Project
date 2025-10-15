@@ -8,15 +8,16 @@ from Easy_Visa.exception.exception import CustomException
 from Easy_Visa.logging.logger import logger
 from botocore.exceptions import ClientError
 from pandas import DataFrame, read_csv
+from Easy_Visa.configuration.aws_connection import S3Client
 
 
 class S3Operations:
     def __init__(self, profile_name: str = "default", region_name: str = "us-east-1"):
         try:
-            session = boto3.Session(profile_name=profile_name, region_name=region_name)
-            self.s3_resource = session.resource("s3")
-            self.s3_client = session.client("s3")
-            self.Bucket = self.s3_resource.Bucket
+            #session = boto3.Session(profile_name=profile_name, region_name=region_name)
+            s3_client = S3Client()
+            self.s3_resource = s3_client.resource
+            self.s3_client = s3_client.client
         except Exception as e:
             raise CustomException(e)
 
