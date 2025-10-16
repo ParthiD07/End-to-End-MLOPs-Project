@@ -7,11 +7,9 @@ WORKDIR /app
 # Copy dependency file first (enables Docker caching)
 COPY requirements.txt .
 
-# Install Python dependencies and awscli
-RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends awscli && \
-    pip install --no-cache-dir -r requirements.txt && \
-    rm -rf /var/lib/apt/lists/*
+# Install awscli via pip (lightweight + fast)
+RUN pip install --no-cache-dir awscli && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the project code
 COPY . .
