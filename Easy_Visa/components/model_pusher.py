@@ -2,6 +2,7 @@ import sys,os
 import json
 import shutil
 from datetime import datetime
+from Easy_Visa.constants import MODEL_S3_FILE_NAME
 
 from Easy_Visa.cloud_storage.aws_storage import S3Operations
 from Easy_Visa.exception.exception import CustomException
@@ -21,10 +22,9 @@ class ModelPusher:
         self.model_evaluation_artifact = model_evaluation_artifact
         self.model_pusher_config = model_pusher_config
         # Define where the model will live in S3
+        s3_model_path = f"{model_pusher_config.s3_model_dir}/{model_pusher_config.model_file_name}"
         self.usvisa_estimator = USvisaEstimator(bucket_name=model_pusher_config.bucket_name,
-                                model_path=os.path.join(model_pusher_config.s3_model_dir,
-                                    model_pusher_config.version_prefix,
-                                    model_pusher_config.model_file_name))
+                                model_path=s3_model_path)
         
     def initiate_model_pusher(self) -> ModelPusherArtifact:
         """
@@ -50,10 +50,8 @@ class ModelPusher:
             shutil.copy(self.model_evaluation_artifact.evaluation_metrics_path, local_metrics_path)
 
             metadata_path = os.path.join(local_dir, "metadata.json")
-            model_version = self.model_pusher_config.version_prefix
             pushed_at = datetime.now().isoformat()
             metadata = {
-                "model_version": model_version,
                 "pushed_at": pushed_at,
                 "s3_model_path": self.usvisa_estimator.model_path
             }
@@ -69,23 +67,25 @@ class ModelPusher:
             # Upload the model file
             self.usvisa_estimator.save_model(from_file=local_model_path, remove_local=False)
             # Upload evaluation metrics
+            metrics_s3_key = f"{self.model_pusher_config.s3_model_dir}/evaluation_metrics.json"
+            metadata_s3_key = f"{self.model_pusher_config.s3_model_dir}/metadata.json"
             self.s3.upload_file(local_metrics_path,
-                    to_s3_key=os.path.join(self.model_pusher_config.s3_model_dir, model_version, "evaluation_metrics.json"),
+                    to_s3_key=metrics_s3_key,
                     bucket_name=self.model_pusher_config.bucket_name,
                     remove_local=False)
             # Upload metadata
             self.s3.upload_file(metadata_path,
-                    to_s3_key=os.path.join(self.model_pusher_config.s3_model_dir, model_version, "metadata.json"),
+                    to_s3_key=metadata_s3_key,
                     bucket_name=self.model_pusher_config.bucket_name,
                     remove_local=False)
             
+            logger.info(f"Model pushed successfully to s3://{self.model_pusher_config.bucket_name}/{self.usvisa_estimator.model_path}")
             logger.info("Model Pusher process completed successfully.")
 
             # --- Return artifact ---
             return ModelPusherArtifact(
                 bucket_name=self.model_pusher_config.bucket_name,
                 s3_model_path=self.usvisa_estimator.model_path,
-                model_version=model_version,
                 pushed_at=pushed_at
             )
 

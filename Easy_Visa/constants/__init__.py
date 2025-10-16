@@ -64,3 +64,5 @@ MODEL_EVALUATION_DIR_NAME: str = "model_evaluation"
 MODEL_EVALUATION_CHANGED_THRESHOLD_SCORE: float = 0.02
 MODEL_S3_BUCKET_NAME: str = "us-visa-model-8321-9489-5652"
 EVALUATION_METRICS_FILE_NAME: str = "evaluation_metrics.json" 
+
+MODEL_S3_FILE_NAME="us_visa_files\\model.pkl"

@@ -1,4 +1,3 @@
-from datetime import datetime
 import os
 from Easy_Visa.constants import *
 
@@ -55,12 +54,11 @@ class ModelPusherConfig:
         self.bucket_name: str = MODEL_S3_BUCKET_NAME
         self.model_pusher_dir: str = os.path.join(ARTIFACTS_DIR, "model_pusher")
         self.model_file_name: str = MODEL_FILE_NAME
-        self.s3_model_dir: str = "models/us_visa_classifier"
-        self.version_prefix: str = f"v{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        self.s3_model_dir: str = "us_visa_files"
 
 class USVisaPredictionConfig:
     def __init__(self):
-        self.model_file_path: str = MODEL_FILE_NAME
+        self.model_file_path: str = MODEL_S3_FILE_NAME
         self.model_bucket_name: str = MODEL_S3_BUCKET_NAME
         self.local_prediction_dir: str = os.path.join("artifacts", "prediction")
         os.makedirs(self.local_prediction_dir, exist_ok=True)

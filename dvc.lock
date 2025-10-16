@@ -144,8 +144,8 @@ stages:
     deps:
     - path: Easy_Visa/components/model_pusher.py
       hash: md5
-      md5: 7e27d86490989c03429228b468b7b1d7
-      size: 5367
+      md5: 1353ac2a6b64d0dff0f56dfc625fa87e
+      size: 5329
     - path: artifacts/model_evaluation
       hash: md5
       md5: 8cb16e62f8f3153b15efea232183cda9.dir
@@ -154,6 +154,6 @@ stages:
     outs:
     - path: artifacts/model_pusher
       hash: md5
-      md5: c0bf291b9f47f36428355f39556e2002.dir
-      size: 1578742
+      md5: c1679b2ec1a86b105b109098619889b8.dir
+      size: 1578671
       nfiles: 3

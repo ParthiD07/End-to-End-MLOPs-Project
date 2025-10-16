@@ -30,47 +30,51 @@ def home():
 # -----------------------------
 # Single prediction route
 # -----------------------------
-@app.route('/predict', methods=['POST'])
+@app.route('/predict', methods=['GET', 'POST'])
 def predict():
-    try:
-        # Get form data
-        continent = request.form['continent']
-        education_of_employee = request.form['education_of_employee']
-        has_job_experience = request.form['has_job_experience']
-        requires_job_training = request.form['requires_job_training']
-        no_of_employees = int(request.form['no_of_employees'])
-        yr_of_estab = int(request.form['yr_of_estab'])
-        region_of_employment = request.form['region_of_employment']
-        prevailing_wage = float(request.form['prevailing_wage'])
-        unit_of_wage = request.form['unit_of_wage']
-        full_time_position = request.form['full_time_position']
+    if request.method == 'POST':
 
-        # Calculate derived feature
-        company_age = datetime.now().year - yr_of_estab
+        try:
+            # Get form data
+            continent = request.form['continent']
+            education_of_employee = request.form['education_of_employee']
+            has_job_experience = request.form['has_job_experience']
+            requires_job_training = request.form['requires_job_training']
+            no_of_employees = int(request.form['no_of_employees'])
+            yr_of_estab = int(request.form['yr_of_estab'])
+            region_of_employment = request.form['region_of_employment']
+            prevailing_wage = float(request.form['prevailing_wage'])
+            unit_of_wage = request.form['unit_of_wage']
+            full_time_position = request.form['full_time_position']
 
-        # Prepare input
-        data = USvisaData(
-            continent, education_of_employee, has_job_experience, requires_job_training,
-            no_of_employees, region_of_employment, prevailing_wage, unit_of_wage,
-            full_time_position, company_age
-        )
+            # Calculate derived feature
+            company_age = datetime.now().year - yr_of_estab
 
-        input_df = data.get_usvisa_input_data_frame()
-        predictor = USvisaClassifier()
-        prediction = predictor.predict(input_df)
-        pred_value = int(prediction[0])
-        result_text = "Visa Approved" if pred_value == 1 else "Visa Denied"
+            # Prepare input
+            data = USvisaData(
+                continent, education_of_employee, has_job_experience, requires_job_training,
+                no_of_employees, region_of_employment, prevailing_wage, unit_of_wage,
+                full_time_position, company_age
+            )
 
-        # Pass dropdown options and form values to retain selection
-        form_values = request.form.to_dict()
-        return render_template('result.html', 
-                               dropdown_options=DROPDOWN_OPTIONS, 
-                               result=result_text,
-                               form_values=form_values)
+            input_df = data.get_usvisa_input_data_frame()
+            predictor = USvisaClassifier()
+            prediction = predictor.predict(input_df)
+            pred_value = int(prediction[0])
+            result_text = "Visa Approved" if pred_value == 1 else "Visa Denied"
 
-    except Exception as e:
-        logger.error(f"Prediction failed: {e}")
-        return render_template('result.html', dropdown_options=DROPDOWN_OPTIONS, result=f"Error: {e}")
+            # Pass dropdown options and form values to retain selection
+            form_values = request.form.to_dict()
+            return render_template('result.html', 
+                                dropdown_options=DROPDOWN_OPTIONS, 
+                                result=result_text,
+                                form_values=form_values)
+
+        except Exception as e:
+            logger.error(f"Prediction failed: {e}")
+            return render_template('result.html', dropdown_options=DROPDOWN_OPTIONS, result=f"Error: {e}")
+        
+    return render_template('result.html', dropdown_options=DROPDOWN_OPTIONS)
 
 # -----------------------------
 # Batch prediction route
