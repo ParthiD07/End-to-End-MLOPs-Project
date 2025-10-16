@@ -16,7 +16,6 @@ atpublic==5.0
 attrs==25.3.0
 backcall==0.2.0
 backoff==2.2.1
-backports.zoneinfo==0.2.1
 billiard==4.2.2
 blinker==1.8.2
 boto3==1.37.3
