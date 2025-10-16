@@ -61,6 +61,7 @@ jobs:
         #   run: |
         #     docker ps -q --filter "name=easy-visa" | grep -q . && docker stop easy-visa && docker rm -fv easy-visa || true
 
+        
       - name: Run Docker Image to serve users
         run: |
           docker run -d -p 8080:8080 --ipc="host" --name=easy-visa \
